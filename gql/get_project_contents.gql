@@ -1,0 +1,74 @@
+query GetProjectContents(
+    $org: String!,
+    $number: Int!,
+    $first: Int!,
+    $cursor: String
+  ){
+  organization(login: $org) {
+    projectV2(number:$number)
+    {
+      id
+      title
+      items(first: $first, after: $cursor) {
+        totalCount
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+        nodes {
+          id
+          createdAt
+          updatedAt 
+          type 
+          content {
+            ... on DraftIssue {
+              title
+              createdAt
+              updatedAt 
+            }
+            ... on Closable {
+              closed
+              closedAt
+            }
+            ... on Issue {
+              title
+              number
+              url
+              createdAt
+              updatedAt
+            }
+            ... on PullRequest {
+              title
+              number
+              url
+              createdAt
+              updatedAt
+            }
+          }
+          fieldValues(first: 50) {
+            nodes {
+              ... on ProjectV2ItemFieldValueCommon {
+                field {
+                  ... on ProjectV2FieldCommon {
+                    id
+                  }
+                }
+                id
+              }
+              ... on ProjectV2ItemFieldLabelValue {
+                labels(first: 50) {
+                  nodes {
+                    name
+                  }
+                }
+              }
+              ... on ProjectV2ItemFieldSingleSelectValue {
+                optionId
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

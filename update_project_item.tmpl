@@ -1,0 +1,11 @@
+mutation UpdateIssues {
+{{ range . }}
+u{{ .FieldIndex }}_{{ .ProjectIndex }} : updateProjectV2ItemFieldValue(
+    input:{
+        projectId:"{{ .ProjectId }}",
+        itemId: "{{ .ProjectItemId }}",
+        fieldId:"{{ .FieldId }}",
+        value:{ {{ .Value }} }
+    }){ projectV2Item{id} } ,
+{{ end }}
+}

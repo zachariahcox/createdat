@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Go",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}",
+            "env": {"GITHUB_TOKEN":"${env:GITHUB_TOKEN}"}, // forward the github token to the debug environment
+            "args": []
+        }
+    ]
+}
