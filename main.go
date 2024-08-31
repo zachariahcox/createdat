@@ -74,7 +74,7 @@ type ProjectItem struct {
 }
 
 func generateUpdateStatement(updates []ProjectItem) string {
-	templateFile := "updateStatement.tmpl"
+	templateFile := "gql/update_issues.tmpl"
 	t, err := template.New(templateFile).ParseFiles(templateFile)
 	if err != nil {
 		panic(err)
