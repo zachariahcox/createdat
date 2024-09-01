@@ -18,13 +18,13 @@ query GetProjectContents(
         nodes {
           id
           createdAt
-          updatedAt 
-          type 
+          updatedAt
+          type
           content {
             ... on DraftIssue {
               title
               createdAt
-              updatedAt 
+              updatedAt
             }
             ... on Closable {
               closed
