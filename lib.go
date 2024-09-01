@@ -40,10 +40,21 @@ func loadTemplate(filePath string) *template.Template {
 }
 
 type Project struct {
-	owner  string
-	repo   string
-	number string
+	owner    string
+	repo     string
+	number   string
+	contents *[]*ProjectItem
 }
+
+func NewProject(owner string, repo string, number string) *Project {
+	p := new(Project)
+	p.owner = owner
+	p.repo = repo
+	p.number = number
+	p.contents = getProjectContents(p)
+	return p
+}
+
 type ProjectItem struct {
 	FieldIndex          int
 	ProjectIndex        int
@@ -102,7 +113,7 @@ func getIssues(p *Project) *[]*Issue {
 	return &issues
 }
 
-func getIssuesMissingDates(p *Project) *[]*ProjectItem {
+func getProjectContents(p *Project) *[]*ProjectItem {
 	bytes, err := GqlFiles.ReadFile("gql/get_project_contents.gql")
 	if err != nil {
 		panic("could not load file")
