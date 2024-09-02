@@ -18,13 +18,13 @@ query GetProjectContents(
         nodes {
           id
           createdAt
-          updatedAt
+          # updatedAt
           type
           content {
             ... on DraftIssue {
               title
               createdAt
-              updatedAt
+              # updatedAt
             }
             ... on Closable {
               closed
@@ -35,38 +35,38 @@ query GetProjectContents(
               number
               url
               createdAt
-              updatedAt
+              # updatedAt
             }
             ... on PullRequest {
               title
               number
               url
               createdAt
-              updatedAt
+              # updatedAt
             }
           }
-          fieldValues(first: 50) {
-            nodes {
-              ... on ProjectV2ItemFieldValueCommon {
-                field {
-                  ... on ProjectV2FieldCommon {
-                    id
-                  }
-                }
-                id
-              }
-              ... on ProjectV2ItemFieldLabelValue {
-                labels(first: 50) {
-                  nodes {
-                    name
-                  }
-                }
-              }
-              ... on ProjectV2ItemFieldSingleSelectValue {
-                optionId
-              }
-            }
-          }
+          # fieldValues(first: 50) {
+          #   nodes {
+          #     ... on ProjectV2ItemFieldValueCommon {
+          #       field {
+          #         ... on ProjectV2FieldCommon {
+          #           id
+          #         }
+          #       }
+          #       id
+          #     }
+          #     ... on ProjectV2ItemFieldLabelValue {
+          #       labels(first: 50) {
+          #         nodes {
+          #           name
+          #         }
+          #       }
+          #     }
+          #     ... on ProjectV2ItemFieldSingleSelectValue {
+          #       optionId
+          #     }
+          #   }
+          # }
         }
       }
     }

@@ -3,14 +3,12 @@ package main
 import (
 	"bytes"
 	"embed"
-	_ "embed"
 	"fmt"
 	"log"
 	"strings"
 	"text/template"
 
 	"github.com/cli/go-gh/v2"
-	"golang.org/x/exp/constraints"
 )
 
 var batchSize = 25
@@ -40,9 +38,12 @@ func loadTemplate(filePath string) *template.Template {
 }
 
 type Project struct {
+	id       string
+	title    string
 	owner    string
 	repo     string
 	number   string
+	items    *[]*ProjectItem
 	contents *[]*ProjectItem
 }
 
@@ -53,6 +54,22 @@ func NewProject(owner string, repo string, number string) *Project {
 	p.number = number
 	p.contents = getProjectContents(p)
 	return p
+}
+
+type Content struct {
+	id        string
+	url       string
+	number    float64
+	title     string
+	closed    bool
+	createdAt string
+	closedAt  string
+}
+type PI struct {
+	id          string
+	createdAt   string
+	content     Content
+	contentType string
 }
 
 type ProjectItem struct {
@@ -124,11 +141,12 @@ func getProjectContents(p *Project) *[]*ProjectItem {
 	cmd := []string{"api", "graphql", "--paginate",
 		"-F", "org=" + p.owner,
 		"-F", "number=" + p.number,
-		"-F", "first=" + "100",
-		"-f", "query=" + query}
+		"-F", "first=" + "50",
+		"-f", "query=" + query,
+		"-q", ".data.organization.projectV2"}
 
-	items := callCLI(cmd)
-	fmt.Println(items)
+	resp := callCLI(cmd)
+	fmt.Println(resp)
 	return nil
 }
 
@@ -180,11 +198,4 @@ func makeChanges(updates []ProjectItem) {
 		args := []string{"api", "graphql", "--query", s}
 		callCLI(args)
 	}
-}
-
-func min[T constraints.Ordered](a, b T) T {
-	if a < b {
-		return a
-	}
-	return b
 }
