@@ -1,8 +1,7 @@
 package main
 
 func main() {
-	NewProject("slsa-framework", "slsa", "5")
-
-	// UpdateCreatedAt()
+	p := NewProject("slsa-framework", "slsa", "5")
+	UpdateCreatedAt(p)
 	// getRepos()
 }

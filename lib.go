@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"embed"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -17,15 +18,16 @@ var DEBUG = true
 //go:embed gql/*
 var GqlFiles embed.FS
 
-func callCLI(cmd []string) string {
+func callCLI(cmd []string) []byte {
 	stdout, stderr, err := gh.Exec(cmd...)
 	if err != nil {
 		log.Fatal(strings.Join(cmd, " "), "\n",
 			stdout.String(), "\n",
 			stderr.String(), "\n",
 			err)
+		return nil
 	}
-	return stdout.String()
+	return stdout.Bytes()
 }
 
 func loadTemplate(filePath string) *template.Template {
@@ -37,42 +39,61 @@ func loadTemplate(filePath string) *template.Template {
 	return t
 }
 
+// kind of a cool facility here: https://mholt.github.io/json-to-go/
+type ProjectItemGql struct {
+	Content struct {
+		Closed    bool   `json:"closed,omitempty"`
+		ClosedAt  any    `json:"closedAt,omitempty"`
+		CreatedAt string `json:"createdAt,omitempty"`
+		Number    int    `json:"number,omitempty"`
+		Title     string `json:"title,omitempty"`
+		URL       string `json:"url,omitempty"`
+	} `json:"content,omitempty"`
+	CreatedAt   string `json:"createdAt,omitempty"`
+	FieldValues struct {
+		Nodes []struct {
+			Labels struct {
+				Nodes []struct {
+					Name string `json:"name,omitempty"`
+				} `json:"nodes,omitempty"`
+			} `json:"labels,omitempty"`
+			Field struct {
+				ID string `json:"id,omitempty"`
+			} `json:"field,omitempty"`
+			ID       string `json:"id,omitempty"`
+			OptionID string `json:"optionId,omitempty"`
+		} `json:"nodes,omitempty"`
+	} `json:"fieldValues,omitempty"`
+	ID   string `json:"id,omitempty"`
+	Type string `json:"type,omitempty"`
+}
+
 type Project struct {
-	id       string
-	title    string
-	owner    string
-	repo     string
-	number   string
-	items    *[]*ProjectItem
-	contents *[]*ProjectItem
+	Owner  string
+	Repo   string
+	Number string
+	ID     string `json:"id,omitempty"`
+	Title  string `json:"title,omitempty"`
+	Items  struct {
+		Nodes []ProjectItemGql `json:"nodes,omitempty"`
+		// PageInfo struct {
+		// 	EndCursor   string `json:"endCursor,omitempty"`
+		// 	HasNextPage bool   `json:"hasNextPage,omitempty"`
+		// } `json:"pageInfo,omitempty"`
+		TotalCount int `json:"totalCount,omitempty"`
+	} `json:"items,omitempty"`
 }
 
 func NewProject(owner string, repo string, number string) *Project {
 	p := new(Project)
-	p.owner = owner
-	p.repo = repo
-	p.number = number
-	p.contents = getProjectContents(p)
+	p.Owner = owner
+	p.Repo = repo
+	p.Number = number
+	getProjectContents(p)
 	return p
 }
 
-type Content struct {
-	id        string
-	url       string
-	number    float64
-	title     string
-	closed    bool
-	createdAt string
-	closedAt  string
-}
-type PI struct {
-	id          string
-	createdAt   string
-	content     Content
-	contentType string
-}
-
-type ProjectItem struct {
+type ProjectItemUpdate struct {
 	FieldIndex          int
 	ProjectIndex        int
 	ProjectId           string
@@ -80,74 +101,40 @@ type ProjectItem struct {
 	FieldId             string
 	ProjectV2FieldValue string // this is an https://docs.github.com/en/graphql/reference/input-objects#projectv2fieldvalue
 }
-type Issue struct {
-	url  string
-	id   string
-	date string
-}
-
-func (issue *Issue) String() string {
-	return "id: " + issue.id + " date: " + issue.date + " url: " + issue.url
-}
 
 func getFieldId(p *Project, fieldName string) string {
 	cmd := []string{"project", "field-list",
-		"--owner", p.owner, p.number,
+		"--owner", p.Owner, p.Number,
 		"--format", "json",
 		"--jq", ".fields[] | select(.name==\"" + fieldName + "\") | .id"}
 	fieldId := callCLI(cmd)
-	if fieldId == "" {
+	if fieldId == nil {
 		log.Fatal("Could not find field named '" + fieldName + "'")
 	}
-	return fieldId
+	return strings.TrimSuffix(string(fieldId), "\n")
 }
 
-func getIssues(p *Project) *[]*Issue {
-
-	fields := []string{"createdAt", "id", "url"}
-	d := make([]string, 0, len(fields))
-	for _, s := range fields {
-		d = append(d, "."+s)
-	}
-	cmd := []string{"issue", "list",
-		"--repo", strings.Join([]string{p.owner, p.repo}, "/"),
-		"--json", strings.Join(fields, ","),
-		"--jq", ".[] | " + strings.Join(d, "+\" \"+")}
-
-	// super fancy parsing
-	fmt.Println(strings.Join(cmd, " "))
-	id_date_pairs := strings.Split(callCLI(cmd), "\n")
-	issues := make([]*Issue, 0, len(id_date_pairs))
-
-	for _, p := range id_date_pairs {
-		if p == "" {
-			continue // sometimes these end with a newline
-		}
-		parts := strings.Split(p, " ")
-		issue := Issue{date: parts[0], id: parts[1], url: parts[2]}
-		issues = append(issues, &issue)
-	}
-	return &issues
-}
-
-func getProjectContents(p *Project) *[]*ProjectItem {
+func getProjectContents(p *Project) {
 	bytes, err := GqlFiles.ReadFile("gql/get_project_contents.gql")
 	if err != nil {
 		panic("could not load file")
 	}
 	query := string(bytes)
-	fmt.Println(query)
-
 	cmd := []string{"api", "graphql", "--paginate",
-		"-F", "org=" + p.owner,
-		"-F", "number=" + p.number,
+		"-F", "org=" + p.Owner,
+		"-F", "number=" + p.Number,
 		"-F", "first=" + "50",
 		"-f", "query=" + query,
 		"-q", ".data.organization.projectV2"}
 
 	resp := callCLI(cmd)
-	fmt.Println(resp)
-	return nil
+	if resp == nil {
+		return
+	}
+
+	if err := json.Unmarshal(resp, &p); err != nil {
+		return
+	}
 }
 
 func getRepos() {
@@ -166,14 +153,33 @@ func getRepos() {
 }
 
 func UpdateCreatedAt(p *Project) {
-	// fieldId := getFieldId(&p, "Created Date")
-	issues := getIssues(p)
-	for index, issue := range *issues {
-		fmt.Println(index, issue)
+	fieldId := getFieldId(p, "Created Date")
+	needsUpdate := make([]*ProjectItemUpdate, 0, len(p.Items.Nodes))
+	for _, item := range p.Items.Nodes {
+		// does this item have a created date?
+		hasCreatedAt := false
+		for _, f := range item.FieldValues.Nodes {
+			hasCreatedAt = f.Field.ID == fieldId
+			if hasCreatedAt {
+				fmt.Println(item.Content.URL, "already has a createdAt")
+				break
+			}
+		}
+		if !hasCreatedAt {
+			update := new(ProjectItemUpdate)
+			update.FieldId = fieldId
+			update.FieldIndex = 0
+			needsUpdate = append(needsUpdate, update)
+		}
+	}
+
+	// generate update statement
+	for _, i := range needsUpdate {
+		fmt.Println("will update", i.Content.URL, "to", i.Content.CreatedAt)
 	}
 }
 
-func generateUpdateStatement(updates []ProjectItem) string {
+func generateUpdateStatement(updates []ProjectItemUpdate) string {
 	t := loadTemplate("gql/update_issues.tmpl")
 	var buf bytes.Buffer
 	err := t.Execute(&buf, updates)
@@ -183,7 +189,7 @@ func generateUpdateStatement(updates []ProjectItem) string {
 	return buf.String()
 }
 
-func makeChanges(updates []ProjectItem) {
+func makeChanges(updates []ProjectItemUpdate) {
 	len_updates := len(updates)
 	batchSize := (len_updates + batchSize - 1) / batchSize // this is just ceil, golang doesn't have int ceil???
 	for i := 0; i < len_updates; i += batchSize {

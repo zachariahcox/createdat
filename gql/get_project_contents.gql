@@ -45,28 +45,28 @@ query GetProjectContents(
               # updatedAt
             }
           }
-          # fieldValues(first: 50) {
-          #   nodes {
-          #     ... on ProjectV2ItemFieldValueCommon {
-          #       field {
-          #         ... on ProjectV2FieldCommon {
-          #           id
-          #         }
-          #       }
-          #       id
-          #     }
-          #     ... on ProjectV2ItemFieldLabelValue {
-          #       labels(first: 50) {
-          #         nodes {
-          #           name
-          #         }
-          #       }
-          #     }
-          #     ... on ProjectV2ItemFieldSingleSelectValue {
-          #       optionId
-          #     }
-          #   }
-          # }
+          fieldValues(first: 50) {
+            nodes {
+              ... on ProjectV2ItemFieldValueCommon {
+                field {
+                  ... on ProjectV2FieldCommon {
+                    id
+                  }
+                }
+                id
+              }
+              ... on ProjectV2ItemFieldLabelValue {
+                labels(first: 50) {
+                  nodes {
+                    name
+                  }
+                }
+              }
+              ... on ProjectV2ItemFieldSingleSelectValue {
+                optionId
+              }
+            }
+          }
         }
       }
     }
