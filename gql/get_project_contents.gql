@@ -5,8 +5,7 @@ query GetProjectContents(
     $cursor: String
   ){
   organization(login: $org) {
-    projectV2(number:$number)
-    {
+    projectV2(number:$number) {
       id
       title
       items(first: $first, after: $cursor) {

@@ -15,7 +15,7 @@ func assert(t *testing.T, should_be_true bool, message string) {
 
 func TestGH(t *testing.T) {
 	args := []string{"version"}
-	result := callCLI(args)
+	result := string(callCLI(args))
 	want := regexp.MustCompile("$gh.*")
 	assert(t, want.MatchString(result), strings.Join(args, " "))
 }
@@ -62,7 +62,7 @@ func TestParseProject(t *testing.T) {
 	}
 	}`)
 
-	var data = new(ProjectGql)
+	var data = new(Project)
 	if err := json.Unmarshal(resp, &data); err != nil {
 		t.Fail()
 	}

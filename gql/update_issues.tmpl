@@ -5,7 +5,7 @@ u{{ .FieldIndex }}_{{ .ProjectIndex }} : updateProjectV2ItemFieldValue(
         projectId:"{{ .ProjectId }}",
         itemId: "{{ .ProjectItemId }}",
         fieldId:"{{ .FieldId }}",
-        value:{ {{ .Value }} }
-    }){ projectV2Item{id} } ,
+        value:{ {{ .ProjectV2FieldValue }} }
+    }){ projectV2Item{id} },
 {{ end }}
 }

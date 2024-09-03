@@ -1,7 +1,7 @@
 query GetProjectFields(
     $org: String!,
     $number: Int!,
-  	$first:Int!, 
+  	$first:Int!,
   	$cursor:String,
   ){
   organization(login: $org) {
@@ -16,14 +16,14 @@ query GetProjectFields(
            ... on ProjectV2FieldCommon {
               dataType
               name
-              id 
+              id
             }
            ... on ProjectV2SingleSelectField {
             options {
               name
               id
             }
-          } 
+          }
         }
       }
     }
