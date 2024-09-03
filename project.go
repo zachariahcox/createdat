@@ -131,7 +131,17 @@ type ProjectItemUpdate struct {
 	ProjectV2FieldValue string // this is an https://docs.github.com/en/graphql/reference/input-objects#projectv2fieldvalue
 }
 
-func (p *Project) UpdateCreatedAt() {
+func generateUpdateStatement(updates []*ProjectItemUpdate) string {
+	t := loadTemplate("gql/update_issues.tmpl")
+	var buf bytes.Buffer
+	err := t.Execute(&buf, updates)
+	if err != nil {
+		panic(err)
+	}
+	return buf.String()
+}
+
+func (p *Project) UpdateCreatedAt() int {
 	fieldIndex, fieldId := p.GetFieldId("Created Date")
 	updates := make([]*ProjectItemUpdate, 0, len(p.Items.Nodes))
 	for itemIndex, item := range p.Items.Nodes {
@@ -140,7 +150,6 @@ func (p *Project) UpdateCreatedAt() {
 		for _, f := range item.FieldValues.Nodes {
 			hasCreatedAt = f.Field.ID == fieldId
 			if hasCreatedAt {
-				fmt.Println(item.Content.URL, "already has a createdAt")
 				break
 			}
 		}
@@ -174,14 +183,6 @@ func (p *Project) UpdateCreatedAt() {
 			callCLI(cmd)
 		}
 	}
-}
 
-func generateUpdateStatement(updates []*ProjectItemUpdate) string {
-	t := loadTemplate("gql/update_issues.tmpl")
-	var buf bytes.Buffer
-	err := t.Execute(&buf, updates)
-	if err != nil {
-		panic(err)
-	}
-	return buf.String()
+	return len_updates
 }
