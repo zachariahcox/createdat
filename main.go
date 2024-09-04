@@ -1,13 +1,23 @@
 package main
 
 import (
+	"embed"
 	"flag"
 	"fmt"
+	"log"
+	"path"
+	"strings"
+	"text/template"
 	"time"
+
+	"github.com/cli/go-gh/v2"
 )
 
 var DEBUG = true
 var MAX_UPDATES = 25
+
+//go:embed gql/*
+var GqlFiles embed.FS
 
 func main() {
 	// parse args
@@ -15,8 +25,11 @@ func main() {
 	flag.IntVar(&MAX_UPDATES, "maxUpdates", 25, "How many update statements to make in one gql query. Turn this down if you're running into rate limits.")
 	flag.Parse()
 
-	fmt.Println("DEBUG =", DEBUG)
-	fmt.Println("MAX_UPDATES =", MAX_UPDATES)
+	if DEBUG {
+		fmt.Println("DEBUG:")
+		fmt.Println("\tDEBUG =", DEBUG)
+		fmt.Println("\tMAX_UPDATES =", MAX_UPDATES)
+	}
 
 	start := time.Now()
 
@@ -26,10 +39,23 @@ func main() {
 	fmt.Println("updated", updatedCount, "items in", time.Since(start))
 }
 
-func track(msg string) (string, time.Time) {
-	return msg, time.Now()
+func callCLI(cmd []string) []byte {
+	stdout, stderr, err := gh.Exec(cmd...)
+	if err != nil {
+		log.Fatal(strings.Join(cmd, " "), "\n",
+			stdout.String(), "\n",
+			stderr.String(), "\n",
+			err)
+		return nil
+	}
+	return stdout.Bytes()
 }
 
-func duration(msg string, start time.Time) {
-	fmt.Printf("%v: %v\n", msg, time.Since(start))
+func loadTemplate(filePath string) *template.Template {
+	name := path.Base(filePath) // the template name has to be the basename of "one of the files"
+	t, err := template.New(name).ParseFiles(filePath)
+	if err != nil {
+		panic(err)
+	}
+	return t
 }

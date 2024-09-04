@@ -9,7 +9,6 @@ import (
 )
 
 // kind of a cool facility here: https://mholt.github.io/json-to-go/
-
 type Project struct {
 	Owner  string
 	Repo   string
@@ -17,12 +16,8 @@ type Project struct {
 	ID     string `json:"id,omitempty"`
 	Title  string `json:"title,omitempty"`
 	Items  struct {
-		Nodes []ProjectItemGql `json:"nodes,omitempty"`
-		// PageInfo struct {
-		// 	EndCursor   string `json:"endCursor,omitempty"`
-		// 	HasNextPage bool   `json:"hasNextPage,omitempty"`
-		// } `json:"pageInfo,omitempty"`
-		TotalCount int `json:"totalCount,omitempty"`
+		Nodes      []ProjectItemGql `json:"nodes,omitempty"`
+		TotalCount int              `json:"totalCount,omitempty"`
 	} `json:"items,omitempty"`
 }
 
@@ -168,8 +163,6 @@ func (p *Project) UpdateCreatedAt() int {
 
 	len_updates := len(updates)
 	for i := 0; i < len_updates; i += MAX_UPDATES {
-
-		// golang HAS NO MIN FUNCTION FOR INTEGERS.
 		end := i + MAX_UPDATES
 		if end > len_updates {
 			end = len_updates
@@ -178,7 +171,8 @@ func (p *Project) UpdateCreatedAt() int {
 		s := generateUpdateStatement(updates[i:end])
 		cmd := []string{"api", "graphql", "-f", "query=" + s}
 		if DEBUG {
-			fmt.Println("gh", cmd)
+			fmt.Println("DEBUG:")
+			fmt.Println("gh", strings.Join(cmd, " "))
 		} else {
 			callCLI(cmd)
 		}

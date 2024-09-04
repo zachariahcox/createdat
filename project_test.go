@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"regexp"
 	"strings"
 	"testing"
@@ -9,7 +10,7 @@ import (
 
 func assert(t *testing.T, should_be_true bool, message string) {
 	if !should_be_true {
-		t.Fatalf(message)
+		t.Fatal(message)
 	}
 }
 
@@ -18,6 +19,21 @@ func TestGH(t *testing.T) {
 	result := string(callCLI(args))
 	want := regexp.MustCompile("$gh.*")
 	assert(t, want.MatchString(result), strings.Join(args, " "))
+}
+
+func TestGql(t *testing.T) {
+	bytes, err := GqlFiles.ReadFile("gql/get_repos.gql")
+	if err != nil {
+		panic("could not load file")
+	}
+	query := string(bytes)
+	fmt.Println(query)
+
+	cmd := []string{"api", "graphql", "--paginate",
+		"-f", "query=" + query + ""}
+
+	response := callCLI(cmd)
+	fmt.Println(response)
 }
 
 func TestParseProject(t *testing.T) {
