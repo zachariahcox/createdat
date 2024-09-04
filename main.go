@@ -52,10 +52,10 @@ func callCLI(cmd []string) []byte {
 }
 
 func loadTemplate(filePath string) *template.Template {
-	name := path.Base(filePath) // the template name has to be the basename of "one of the files"
+	name := path.Base(filePath) // go-gotcha: the template name has to be the _basename_ of "one of the parsed files"
 	t, err := template.New(name).ParseFiles(filePath)
 	if err != nil {
-		panic(err)
+		log.Fatal("could not load template at path '", filePath, "'", err)
 	}
 	return t
 }

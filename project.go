@@ -16,9 +16,19 @@ type Project struct {
 	ID     string `json:"id,omitempty"`
 	Title  string `json:"title,omitempty"`
 	Items  struct {
-		Nodes      []ProjectItemGql `json:"nodes,omitempty"`
-		TotalCount int              `json:"totalCount,omitempty"`
+		Nodes []ProjectItemGql `json:"nodes,omitempty"`
 	} `json:"items,omitempty"`
+	Fields struct {
+		Nodes []struct {
+			DataType string `json:"dataType,omitempty"`
+			ID       string `json:"id,omitempty"`
+			Name     string `json:"name,omitempty"`
+			Options  []struct {
+				ID   string `json:"id,omitempty"`
+				Name string `json:"name,omitempty"`
+			} `json:"options,omitempty"`
+		} `json:"nodes,omitempty"`
+	} `json:"fields,omitempty"`
 }
 
 type ProjectItemGql struct {
@@ -54,7 +64,10 @@ func NewProject(owner string, repo string, number string) *Project {
 	p.Owner = owner
 	p.Repo = repo
 	p.Number = number
+
+	// todo: potentially move these to be lazy loaded
 	p.UpdateItems()
+	p.UpdateFields()
 	return p
 }
 
@@ -84,7 +97,7 @@ func (p *Project) UpdateItems() {
 func (p *Project) UpdateFields() {
 	b, err := GqlFiles.ReadFile("gql/get_project_fields.gql")
 	if err != nil {
-		panic("could not load file")
+		log.Fatal("could not load file", err)
 	}
 	query := string(b)
 	cmd := []string{"api", "graphql", "--paginate",
@@ -96,15 +109,27 @@ func (p *Project) UpdateFields() {
 
 	resp := callCLI(cmd)
 	if resp == nil {
+		log.Fatal("failed to update fields")
 		return
 	}
 
 	if err := json.Unmarshal(resp, &p); err != nil {
+		log.Fatal(err)
 		return
 	}
 }
 
 func (p *Project) GetFieldId(fieldName string) (int, string) {
+	for i, f := range p.Fields.Nodes {
+		if f.Name == fieldName {
+			return i, f.ID
+		}
+	}
+	log.Fatal("Could not find field named '" + fieldName + "'")
+	return 0, ""
+}
+
+func (p *Project) GetFieldIdGQL(fieldName string) (int, string) {
 	cmd := []string{"project", "field-list",
 		"--owner", p.Owner, p.Number,
 		"--format", "json",
@@ -131,7 +156,8 @@ func generateUpdateStatement(updates []*ProjectItemUpdate) string {
 	var buf bytes.Buffer
 	err := t.Execute(&buf, updates)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
+		return ""
 	}
 	return buf.String()
 }
