@@ -11,7 +11,6 @@ import (
 // kind of a cool facility here: https://mholt.github.io/json-to-go/
 type Project struct {
 	Owner  string
-	Repo   string
 	Number string
 	ID     string `json:"id,omitempty"`
 	Title  string `json:"title,omitempty"`
@@ -59,10 +58,9 @@ type ProjectItemGql struct {
 	Type string `json:"type,omitempty"`
 }
 
-func NewProject(owner string, repo string, number string) *Project {
+func NewProject(owner string, number string) *Project {
 	p := new(Project)
 	p.Owner = owner
-	p.Repo = repo
 	p.Number = number
 
 	// todo: potentially move these to be lazy loaded

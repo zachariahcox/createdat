@@ -37,8 +37,33 @@ func TestGql(t *testing.T) {
 }
 
 func TestParseProject(t *testing.T) {
-	resp := []byte(`
-	{
+	var data = new(Project)
+	if err := json.Unmarshal(GoodProjectResponse, &data); err != nil {
+		t.Fail()
+	}
+	assert(t, data != nil, "unmarshal should not be nil")
+	assert(t, len(data.Items.Nodes) == 2, "should be 2 items")
+}
+
+func TestParseNil(t *testing.T) {
+	p := new(Project)
+	err := json.Unmarshal(nil, &p)
+	_, ok := err.(*json.SyntaxError)
+	assert(t, ok, "should be a syntax error")
+	assert(t, err != nil, "this shouldn't work")
+	assert(t, len(p.Items.Nodes) == 0, "no nodes!")
+}
+
+func TestParseMalformed(t *testing.T) {
+	p := new(Project)
+	err := json.Unmarshal([]byte("adkjaldkjafahadflkjdaf}}"), &p)
+	_, ok := err.(*json.SyntaxError)
+	assert(t, ok, "should be a syntax error")
+	assert(t, err != nil, "this shouldn't work")
+	assert(t, len(p.Items.Nodes) == 0, "no nodes!")
+}
+
+var GoodProjectResponse = []byte(`{
 	"id":"abc123",
 	"title":"my title",
 	"items": {
@@ -77,11 +102,3 @@ func TestParseProject(t *testing.T) {
 		]
 	}
 	}`)
-
-	var data = new(Project)
-	if err := json.Unmarshal(resp, &data); err != nil {
-		t.Fail()
-	}
-	assert(t, data != nil, "unmarshal should not be nil")
-	assert(t, len(data.Items.Nodes) == 2, "should be 2 items")
-}

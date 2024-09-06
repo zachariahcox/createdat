@@ -20,23 +20,35 @@ var MAX_UPDATES = 25
 var GqlFiles embed.FS
 
 func main() {
+	owner, projectNumber := parseArgs()
+	start := time.Now()
+	p := NewProject(owner, projectNumber)
+	updatedCount := p.UpdateCreatedAt()
+	fmt.Println("updated", updatedCount, "items in", time.Since(start))
+}
+
+func parseArgs() (string, string) {
 	// parse args
 	flag.BoolVar(&DEBUG, "debug", true, "Control debug / dry-run mode. No mutations will be made unless this is explicitly set to 'false'.")
 	flag.IntVar(&MAX_UPDATES, "maxUpdates", 25, "How many update statements to make in one gql query. Turn this down if you're running into rate limits.")
+	url := flag.String("project", "", "fully qualified url to the project")
 	flag.Parse()
 
 	if DEBUG {
 		fmt.Println("DEBUG:")
 		fmt.Println("\tDEBUG =", DEBUG)
 		fmt.Println("\tMAX_UPDATES =", MAX_UPDATES)
+		fmt.Println("\tURL = ", url)
 	}
 
-	start := time.Now()
+	// parse url
+	if url == nil {
+		return "", ""
+	}
 
-	p := NewProject("slsa-framework", "slsa", "5")
-	updatedCount := p.UpdateCreatedAt()
+	components := strings.Split(*url, "/") // https://github.com/user/repo/projects/number
 
-	fmt.Println("updated", updatedCount, "items in", time.Since(start))
+	return "", ""
 }
 
 func callCLI(cmd []string) []byte {
