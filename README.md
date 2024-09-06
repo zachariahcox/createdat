@@ -15,8 +15,11 @@ make clean
 
 ### usage
 
-provide the fully-qualified url to your project.
+1. find the fully-qualified url to your project.
+2. run the following script with to dry-run the operation: 
 
 ```bash
-createdat --debug=true --project=https://github.com/orgs/<org>/project/<number>
+createdat --project=https://github.com/orgs/<org>/project/<number>
 ```
+
+3. When you're happy with the output run with `--debug=false`
