@@ -1,4 +1,4 @@
-module github.com/zachariahcox/created-at
+module github.com/zachariahcox/createdat
 
 go 1.23.0
 
