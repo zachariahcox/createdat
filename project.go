@@ -10,6 +10,7 @@ import (
 
 // kind of a cool facility here: https://mholt.github.io/json-to-go/
 type Project struct {
+	Scope  string
 	Owner  string
 	Number string
 	ID     string `json:"id,omitempty"`
@@ -58,8 +59,9 @@ type ProjectItemGql struct {
 	Type string `json:"type,omitempty"`
 }
 
-func NewProject(owner string, number string) *Project {
+func NewProject(scope string, owner string, number string) *Project {
 	p := new(Project)
+	p.Scope = scope
 	p.Owner = owner
 	p.Number = number
 
@@ -74,13 +76,13 @@ func (p *Project) UpdateItems() {
 	if err != nil {
 		panic("could not load file")
 	}
-	query := string(b)
+	query := strings.Replace(string(b), "{{owner}}", p.Scope, 1)
 	cmd := []string{"api", "graphql", "--paginate",
 		"-F", "org=" + p.Owner,
 		"-F", "number=" + p.Number,
 		"-F", "first=" + "50",
 		"-f", "query=" + query,
-		"-q", ".data.organization.projectV2"}
+		"-q", ".data." + p.Scope + ".projectV2"}
 
 	resp := callCLI(cmd)
 	if resp == nil {
@@ -97,13 +99,13 @@ func (p *Project) UpdateFields() {
 	if err != nil {
 		log.Fatal("could not load file", err)
 	}
-	query := string(b)
+	query := strings.Replace(string(b), "{{owner}}", p.Scope, 1)
 	cmd := []string{"api", "graphql", "--paginate",
 		"-F", "org=" + p.Owner,
 		"-F", "number=" + p.Number,
 		"-F", "first=" + "50",
 		"-f", "query=" + query,
-		"-q", ".data.organization.projectV2"}
+		"-q", ".data." + p.Scope + ".projectV2"}
 
 	resp := callCLI(cmd)
 	if resp == nil {
@@ -117,14 +119,29 @@ func (p *Project) UpdateFields() {
 	}
 }
 
+func (p *Project) CreateField(fieldName string, fieldDataType string) error {
+	cmd := []string{"project", "field-create",
+		"--owner", p.Owner, p.Number,
+		"--name", fieldName,
+		"--data-type", fieldDataType,
+		"--format", "json",
+		"--jq", "\".id\""}
+	response := callCLI(cmd)
+	if response == nil {
+		// raise error
+		return fmt.Errorf("could not create field")
+	}
+
+	p.UpdateFields()
+	return nil
+}
 func (p *Project) GetFieldId(fieldName string) (int, string) {
 	for i, f := range p.Fields.Nodes {
 		if f.Name == fieldName {
 			return i, f.ID
 		}
 	}
-	log.Fatal("Could not find field named '" + fieldName + "'")
-	return 0, ""
+	return -1, ""
 }
 
 func (p *Project) GetFieldIdGQL(fieldName string) (int, string) {
@@ -162,6 +179,10 @@ func generateUpdateStatement(updates []*ProjectItemUpdate) string {
 
 func (p *Project) UpdateCreatedAt() int {
 	fieldIndex, fieldId := p.GetFieldId("Created Date")
+	if fieldId == "" {
+		p.CreateField("Created Date", "DATE")
+		fieldIndex, fieldId = p.GetFieldId("Created Date")
+	}
 	updates := make([]*ProjectItemUpdate, 0, len(p.Items.Nodes))
 	for itemIndex, item := range p.Items.Nodes {
 		// does this item have a created date?

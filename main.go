@@ -35,21 +35,23 @@ func main() {
 	}
 
 	// load project
-	owner, number := parseUrl(*url)
-	p := NewProject(owner, number)
+	scope, owner, number := parseUrl(*url)
+	p := NewProject(scope, owner, number)
 
 	updatedCount := p.UpdateCreatedAt()
 	fmt.Println("updated", updatedCount, "items in", time.Since(start))
 }
 
-func parseUrl(url string) (string, string) {
+func parseUrl(url string) (string, string, string) {
 	components := strings.Split(url, "/")
 	for i, c := range components {
 		if c == "github.com" {
-			return components[i+2], components[i+4]
+			return strings.TrimSuffix(components[i+1], "s"), // the url will have orgs or users
+				components[i+2], // owner name
+				components[i+4] // project number
 		}
 	}
-	return "", ""
+	return "", "", ""
 }
 
 func callCLI(cmd []string) []byte {

@@ -4,7 +4,7 @@ query GetProjectFields(
   	$first:Int!,
   	$cursor:String,
   ){
-  organization(login: $org) {
+  {{owner}}(login: $org) {
     projectV2(number: $number) {
       fields(first: $first, after: $cursor) {
         totalCount

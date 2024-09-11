@@ -4,7 +4,7 @@ clean:
 
 build:
 	mkdir -p build
-	go build -o build/$(BINARY_NAME) -v .
+	go build -ldflags "-s -w" -o build/$(BINARY_NAME) -v .
 
 test:
 	go test -v ./...
