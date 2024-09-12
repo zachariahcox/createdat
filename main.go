@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"path"
 	"strings"
 	"text/template"
@@ -30,8 +31,9 @@ func main() {
 		fmt.Println("\tMAX_UPDATES =", MAX_UPDATES)
 		fmt.Println("\tURL = " + *url)
 	}
-	if url == nil {
-		log.Fatal("you must provide a project url")
+	if url == nil || *url == "" {
+		flag.Usage()
+		os.Exit(1)
 	}
 
 	// load project
