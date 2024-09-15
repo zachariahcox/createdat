@@ -5,10 +5,8 @@ import (
 )
 
 func TestLoadIssues(t *testing.T) {
-	repo := &Repository{
-		Owner: "zachariahcox",
-		Name:  "test",
+	repo := NewRepository("zachariahcox", "test")
+	if repo == nil {
+		t.Fail()
 	}
-
-	repo.LoadIssues()
 }

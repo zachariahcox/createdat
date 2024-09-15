@@ -45,7 +45,7 @@ func TestGql(t *testing.T) {
 
 func TestParseProject(t *testing.T) {
 	var data = new(Project)
-	if err := json.Unmarshal(GoodProjectResponse, &data); err != nil {
+	if err := json.Unmarshal([]byte(GoodProjectResponse), &data); err != nil {
 		t.Fail()
 	}
 	assert(t, data != nil, "unmarshal should not be nil")
@@ -78,7 +78,7 @@ func TestAddIssues(t *testing.T) {
 	// assert(t, len(p.Items.Nodes) > 0, "should have more than 0 nodes")
 }
 
-var GoodProjectResponse = []byte(`{
+var GoodProjectResponse = `{
 	"id":"abc123",
 	"title":"my title",
 	"items": {
@@ -116,4 +116,4 @@ var GoodProjectResponse = []byte(`{
 			}
 		]
 	}
-	}`)
+	}`
