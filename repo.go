@@ -32,6 +32,14 @@ type Repository struct {
 	Issues []Issue `json:"items,omitempty"`
 }
 
+func NewRepository(owner, name string) *Repository {
+	r := &Repository{
+		Owner: owner,
+		Name:  name,
+	}
+	r.LoadIssues()
+	return r
+}
 func (r *Repository) nwo() string {
 	return r.Owner + "/" + r.Name
 }

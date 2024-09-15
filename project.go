@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 )
 
@@ -138,19 +139,6 @@ func (p *Project) GetFieldId(fieldName string) (int, string) {
 	return -1, ""
 }
 
-func (p *Project) GetFieldIdGQL(fieldName string) (int, string) {
-	cmd := []string{"project", "field-list",
-		"--owner", p.Owner, p.Number,
-		"--format", "json",
-		"--jq", ".fields[] | select(.name==\"" + fieldName + "\") | .id"}
-	fieldId := callCLI(cmd)
-	if fieldId == nil {
-		log.Fatal("Could not find field named '" + fieldName + "'")
-	}
-
-	return 0, strings.TrimSuffix(string(fieldId), "\n")
-}
-
 type ProjectItemUpdate struct {
 	FieldIndex          int
 	ProjectIndex        int
@@ -218,4 +206,29 @@ func (p *Project) UpdateCreatedAt() int {
 	}
 
 	return len_updates
+}
+
+func (p *Project) AddIssues(issues []Issue) {
+	// add issues in batches
+	len_issues := len(issues)
+	for i := 0; i < len_issues; i += MAX_UPDATES {
+		end := i + MAX_UPDATES
+		if end > len(issues) {
+			end = len(issues)
+		}
+		// generate batch
+		s := "mutation {\n"
+		for _, issue := range issues[i:end] {
+			s += "u" + strconv.Itoa(i) + ":addProjectV2ItemById(input:{projectId:\"" + p.ID + "\", contentId:\"" + issue.Id + "\"}) {item {id}}\n"
+		}
+		s += "}"
+		cmd := []string{"api", "graphql", "-f", "query=" + s}
+		if DEBUG {
+			fmt.Println("DEBUG:")
+			fmt.Println("gh", strings.Join(cmd, " "))
+		} else {
+			// operation actually writes!
+			callCLI(cmd)
+		}
+	}
 }

@@ -70,6 +70,14 @@ func TestParseMalformed(t *testing.T) {
 	assert(t, len(p.Items.Nodes) == 0, "no nodes!")
 }
 
+func TestAddIssues(t *testing.T) {
+
+	p := NewProject("user", "zachariahcox", "1")
+	r := NewRepository("zachariahcox", "test")
+	p.AddIssues(r.Issues)
+	// assert(t, len(p.Items.Nodes) > 0, "should have more than 0 nodes")
+}
+
 var GoodProjectResponse = []byte(`{
 	"id":"abc123",
 	"title":"my title",
