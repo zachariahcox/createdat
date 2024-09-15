@@ -80,3 +80,11 @@ func loadTemplate(filePath string) *template.Template {
 	}
 	return t
 }
+
+func loadQuery(name string) string {
+	b, err := GqlFiles.ReadFile(name)
+	if err != nil {
+		log.Fatal("could not load file", err)
+	}
+	return string(b)
+}

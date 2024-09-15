@@ -26,23 +26,23 @@ query GetIssues($filters: String!, $first: Int!, $cursor: String) {
             url
           }
         }
-        linkedIssues: timelineItems(first:100, itemTypes:CROSS_REFERENCED_EVENT){
-          nodes{
-            ... on CrossReferencedEvent {
-              willCloseTarget
-              source {
-                ... on Issue {
-                  number
-                  url
-                }
-                ... on PullRequest {
-                  number
-                  url
-                }
-              }
-            }
-          }
-        }
+        # linkedIssues: timelineItems(first:100, itemTypes:CROSS_REFERENCED_EVENT){
+        #   nodes{
+        #     ... on CrossReferencedEvent {
+        #       willCloseTarget
+        #       source {
+        #         ... on Issue {
+        #           number
+        #           url
+        #         }
+        #         ... on PullRequest {
+        #           number
+        #           url
+        #         }
+        #       }
+        #     }
+        #   }
+        # }
       }
     }
   }

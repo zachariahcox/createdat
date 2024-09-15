@@ -72,11 +72,8 @@ func NewProject(scope string, owner string, number string) *Project {
 }
 
 func (p *Project) UpdateItems() {
-	b, err := GqlFiles.ReadFile("gql/get_project_contents.gql")
-	if err != nil {
-		panic("could not load file")
-	}
-	query := strings.Replace(string(b), "{{owner}}", p.Scope, 1)
+	query := loadQuery("gql/get_project_contents.gql")
+	query = strings.Replace(query, "{{owner}}", p.Scope, 1)
 	cmd := []string{"api", "graphql", "--paginate",
 		"-F", "org=" + p.Owner,
 		"-F", "number=" + p.Number,
@@ -95,11 +92,8 @@ func (p *Project) UpdateItems() {
 }
 
 func (p *Project) UpdateFields() {
-	b, err := GqlFiles.ReadFile("gql/get_project_fields.gql")
-	if err != nil {
-		log.Fatal("could not load file", err)
-	}
-	query := strings.Replace(string(b), "{{owner}}", p.Scope, 1)
+	query := loadQuery("gql/get_project_fields.gql")
+	query = strings.Replace(query, "{{owner}}", p.Scope, 1)
 	cmd := []string{"api", "graphql", "--paginate",
 		"-F", "org=" + p.Owner,
 		"-F", "number=" + p.Number,
@@ -166,17 +160,6 @@ type ProjectItemUpdate struct {
 	ProjectV2FieldValue string // this is an https://docs.github.com/en/graphql/reference/input-objects#projectv2fieldvalue
 }
 
-func generateUpdateStatement(updates []*ProjectItemUpdate) string {
-	t := loadTemplate("gql/update_issues.tmpl")
-	var buf bytes.Buffer
-	err := t.Execute(&buf, updates)
-	if err != nil {
-		log.Fatal(err)
-		return ""
-	}
-	return buf.String()
-}
-
 func (p *Project) UpdateCreatedAt() int {
 	fieldIndex, fieldId := p.GetFieldId("Created Date")
 	if fieldId == "" {
@@ -206,19 +189,30 @@ func (p *Project) UpdateCreatedAt() int {
 		}
 	}
 
+	// push updates in batches
 	len_updates := len(updates)
+	t := loadTemplate("gql/update_issues.tmpl")
 	for i := 0; i < len_updates; i += MAX_UPDATES {
 		end := i + MAX_UPDATES
 		if end > len_updates {
 			end = len_updates
 		}
 
-		s := generateUpdateStatement(updates[i:end])
+		// generate batch
+		var buffer bytes.Buffer
+		err := t.Execute(&buffer, updates[i:end])
+		if err != nil {
+			log.Fatal(err)
+			continue
+		}
+		s := buffer.String()
+
 		cmd := []string{"api", "graphql", "-f", "query=" + s}
 		if DEBUG {
 			fmt.Println("DEBUG:")
 			fmt.Println("gh", strings.Join(cmd, " "))
 		} else {
+			// operation actually writes!
 			callCLI(cmd)
 		}
 	}
