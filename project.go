@@ -60,6 +60,17 @@ type ProjectItemGql struct {
 	Type string `json:"type,omitempty"`
 }
 
+func GqlObjectForScope(scope string) string {
+	switch scope {
+	case "user":
+		return "user"
+	case "org":
+		return "organization"
+	default:
+		return "organization"
+	}
+}
+
 func NewProject(scope string, owner string, number string) *Project {
 	p := new(Project)
 	p.Scope = scope
@@ -73,14 +84,15 @@ func NewProject(scope string, owner string, number string) *Project {
 }
 
 func (p *Project) UpdateItems() {
+	gqlObject := GqlObjectForScope(p.Scope)
 	query := loadQuery("gql/get_project_contents.gql")
-	query = strings.Replace(query, "{{owner}}", p.Scope, 1)
+	query = strings.Replace(query, "{{owner}}", gqlObject, 1)
 	cmd := []string{"api", "graphql", "--paginate",
 		"-F", "org=" + p.Owner,
 		"-F", "number=" + p.Number,
 		"-F", "first=" + "50",
 		"-f", "query=" + query,
-		"-q", ".data." + p.Scope + ".projectV2"}
+		"-q", ".data." + gqlObject + ".projectV2"}
 
 	resp := callCLI(cmd)
 	if resp == nil {
@@ -93,14 +105,15 @@ func (p *Project) UpdateItems() {
 }
 
 func (p *Project) UpdateFields() {
+	gqlObject := GqlObjectForScope(p.Scope)
 	query := loadQuery("gql/get_project_fields.gql")
-	query = strings.Replace(query, "{{owner}}", p.Scope, 1)
+	query = strings.Replace(query, "{{owner}}", gqlObject, 1)
 	cmd := []string{"api", "graphql", "--paginate",
 		"-F", "org=" + p.Owner,
 		"-F", "number=" + p.Number,
 		"-F", "first=" + "50",
 		"-f", "query=" + query,
-		"-q", ".data." + p.Scope + ".projectV2"}
+		"-q", ".data." + gqlObject + ".projectV2"}
 
 	resp := callCLI(cmd)
 	if resp == nil {
