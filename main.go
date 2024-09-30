@@ -41,7 +41,11 @@ func main() {
 	p := NewProject(scope, owner, number)
 
 	updatedCount := p.UpdateCreatedAt()
-	fmt.Println("updated", updatedCount, "items in", time.Since(start))
+	if DEBUG {
+		fmt.Println("would have updated", updatedCount, "items in", time.Since(start))
+	} else {
+		fmt.Println("updated", updatedCount, "items in", time.Since(start))
+	}
 }
 
 func parseUrl(url string) (string, string, string) {
