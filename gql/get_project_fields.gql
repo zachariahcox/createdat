@@ -2,11 +2,11 @@ query GetProjectFields(
     $org: String!,
     $number: Int!,
   	$first:Int!,
-  	$cursor:String,
+  	$endCursor:String,
   ){
   {{owner}}(login: $org) {
     projectV2(number: $number) {
-      fields(first: $first, after: $cursor) {
+      fields(first: $first, after: $endCursor) {
         totalCount
         pageInfo {
           hasNextPage

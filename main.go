@@ -15,6 +15,7 @@ import (
 )
 
 var DEBUG = true
+var JUST_GH_CMD = false
 var MAX_UPDATES = 25
 
 func main() {
@@ -23,6 +24,7 @@ func main() {
 	// parse args
 	flag.BoolVar(&DEBUG, "debug", true, "Control debug / dry-run mode. No mutations will be made unless this is explicitly set to 'false'.")
 	flag.IntVar(&MAX_UPDATES, "maxUpdates", 25, "How many update statements to make in one gql query. Turn this down if you're running into rate limits.")
+	flag.BoolVar(&JUST_GH_CMD, "cli", false, "just print the cli command that would be run")
 	url := flag.String("project", "", "fully qualified url to the project")
 	flag.Parse()
 	if DEBUG {
@@ -60,7 +62,26 @@ func parseUrl(url string) (string, string, string) {
 	return "", "", ""
 }
 
+func get_debug_cli_command(cmd []string) string {
+	copy := make([]string, 0, len(cmd))
+	for i, c := range cmd {
+		if strings.Contains(c, "query=") {
+			copy = append(copy, "query='"+cmd[i][6:]+"'")
+		} else {
+			copy = append(copy, cmd[i])
+		}
+	}
+	return "gh " + strings.Join(copy, " ")
+}
+
 func callCLI(cmd []string) []byte {
+	if JUST_GH_CMD {
+		fmt.Print(get_debug_cli_command(cmd), "\n\n")
+		return nil
+	}
+	if DEBUG {
+		fmt.Print(get_debug_cli_command(cmd), "\n\n")
+	}
 	stdout, stderr, err := gh.Exec(cmd...)
 	if err != nil {
 		log.Fatal(strings.Join(cmd, " "), "\n",
@@ -90,5 +111,21 @@ func loadQuery(name string) string {
 	if err != nil {
 		log.Fatal("could not load file", err)
 	}
-	return string(b)
+
+	if DEBUG || JUST_GH_CMD {
+		// remove comments
+		lines := strings.Split(string(b), "\n")
+		no_comments := make([]string, 0, len(lines))
+		for _, line := range lines {
+			if strings.Contains(line, "#") {
+				continue // skip comments
+			}
+			no_comments = append(no_comments, strings.TrimSpace(line))
+		}
+
+		return strings.Join(no_comments, " ")
+	} else {
+		// it's fine to leave comments in normally
+		return string(b)
+	}
 }

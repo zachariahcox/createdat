@@ -10,6 +10,12 @@ import (
 )
 
 // kind of a cool facility here: https://mholt.github.io/json-to-go/
+
+type PageInfo struct {
+	HasNextPage bool   `json:"hasNextPage"`
+	EndCursor   string `json:"endCursor"`
+}
+
 type Project struct {
 	Scope  string
 	Owner  string
@@ -17,7 +23,8 @@ type Project struct {
 	ID     string `json:"id,omitempty"`
 	Title  string `json:"title,omitempty"`
 	Items  struct {
-		Nodes []ProjectItemGql `json:"nodes,omitempty"`
+		Nodes    []ProjectItemGql `json:"nodes,omitempty"`
+		PageInfo PageInfo         `json:"pageInfo,omitempty"`
 	} `json:"items,omitempty"`
 	Fields struct {
 		Nodes []struct {
@@ -87,20 +94,40 @@ func (p *Project) UpdateItems() {
 	gqlObject := GqlObjectForScope(p.Scope)
 	query := loadQuery("gql/get_project_contents.gql")
 	query = strings.Replace(query, "{{owner}}", gqlObject, 1)
-	cmd := []string{"api", "graphql", "--paginate",
-		"-F", "org=" + p.Owner,
-		"-F", "number=" + p.Number,
-		"-F", "first=" + "50",
-		"-f", "query=" + query,
-		"-q", ".data." + gqlObject + ".projectV2"}
+	endCursor := ""
 
-	resp := callCLI(cmd)
-	if resp == nil {
-		return
-	}
+	for {
+		cmd := []string{"api", "graphql",
+			"--jq", ".data." + gqlObject + ".projectV2",
+			"-F", "org=" + p.Owner,
+			"-F", "number=" + p.Number,
+			"-F", "first=" + "50",
+			"-F", "endCursor=" + endCursor,
+			"-f", "query=" + query}
 
-	if err := json.Unmarshal(resp, &p); err != nil {
-		return
+		resp := callCLI(cmd)
+		if resp == nil {
+			log.Fatal("did not get a response")
+			return
+		}
+
+		var page Project
+		if err := json.Unmarshal(resp, &page); err != nil {
+			log.Fatal(err, string(resp))
+			return
+		}
+
+		// copy items into p
+		p.ID = page.ID
+		p.Title = page.Title
+		p.Items.Nodes = append(p.Items.Nodes, page.Items.Nodes...)
+
+		// break after last page
+		if page.Items.PageInfo.HasNextPage {
+			endCursor = page.Items.PageInfo.EndCursor
+		} else {
+			break
+		}
 	}
 }
 
@@ -109,11 +136,11 @@ func (p *Project) UpdateFields() {
 	query := loadQuery("gql/get_project_fields.gql")
 	query = strings.Replace(query, "{{owner}}", gqlObject, 1)
 	cmd := []string{"api", "graphql", "--paginate",
+		"--jq", ".data." + gqlObject + ".projectV2",
 		"-F", "org=" + p.Owner,
 		"-F", "number=" + p.Number,
 		"-F", "first=" + "50",
-		"-f", "query=" + query,
-		"-q", ".data." + gqlObject + ".projectV2"}
+		"-f", "query=" + query}
 
 	resp := callCLI(cmd)
 	if resp == nil {

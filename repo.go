@@ -48,10 +48,10 @@ func (r *Repository) LoadIssues() {
 	query := loadQuery("gql/get_issues.gql")
 	filter := "repo:" + r.nwo() + " is:issue is:open"
 	cmd := []string{"api", "graphql", "--paginate",
+		"--jq", ".data.search.nodes",
 		"-F", "filters=" + filter,
 		"-F", "first=" + "50",
-		"-f", "query=" + query,
-		"-q", ".data.search.nodes"}
+		"-f", "query=" + query}
 
 	resp := callCLI(cmd)
 	if resp == nil {

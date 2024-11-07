@@ -9,6 +9,15 @@
             "program": "${workspaceFolder}",
             "env": {"GITHUB_TOKEN":"${env:GITHUB_TOKEN}"}, // forward the github token to the debug environment
             "args": ["--debug=true", "--maxUpdates=10", "--project=https://github.com/orgs/slsa-framework/projects/5"]
+        },
+        {
+            "name": "cli-output",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}",
+            "env": {"GITHUB_TOKEN":"${env:GITHUB_TOKEN}"}, // forward the github token to the debug environment
+            "args": ["--debug=true", "--cli", "--maxUpdates=10", "--project=https://github.com/orgs/slsa-framework/projects/5"]
         }
     ]
 }

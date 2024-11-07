@@ -1,5 +1,14 @@
-query GetIssues($filters: String!, $first: Int!, $cursor: String) {
-  search(query: $filters, type: ISSUE, first: $first, after: $cursor) {
+query GetIssues(
+  $filters: String!,
+  $first: Int!,
+  $endCursor: String
+  ) {
+  search(
+    query: $filters,
+    type: ISSUE,
+    first: $first,
+    after: $endCursor
+    ) {
     totalCount: issueCount
     pageInfo {
       hasNextPage
