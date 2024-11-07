@@ -23,11 +23,12 @@ type Project struct {
 	ID     string `json:"id,omitempty"`
 	Title  string `json:"title,omitempty"`
 	Items  struct {
-		Nodes    []ProjectItemGql `json:"nodes,omitempty"`
 		PageInfo PageInfo         `json:"pageInfo,omitempty"`
+		Nodes    []ProjectItemGql `json:"nodes,omitempty"`
 	} `json:"items,omitempty"`
 	Fields struct {
-		Nodes []struct {
+		PageInfo PageInfo `json:"pageInfo,omitempty"`
+		Nodes    []struct {
 			DataType string `json:"dataType,omitempty"`
 			ID       string `json:"id,omitempty"`
 			Name     string `json:"name,omitempty"`
@@ -123,8 +124,9 @@ func (p *Project) UpdateItems() {
 		p.Items.Nodes = append(p.Items.Nodes, page.Items.Nodes...)
 
 		// break after last page
-		if page.Items.PageInfo.HasNextPage {
-			endCursor = page.Items.PageInfo.EndCursor
+		pi := page.Items.PageInfo
+		if pi.HasNextPage {
+			endCursor = pi.EndCursor
 		} else {
 			break
 		}
@@ -135,22 +137,41 @@ func (p *Project) UpdateFields() {
 	gqlObject := GqlObjectForScope(p.Scope)
 	query := loadQuery("gql/get_project_fields.gql")
 	query = strings.Replace(query, "{{owner}}", gqlObject, 1)
-	cmd := []string{"api", "graphql", "--paginate",
-		"--jq", ".data." + gqlObject + ".projectV2",
-		"-F", "org=" + p.Owner,
-		"-F", "number=" + p.Number,
-		"-F", "first=" + "50",
-		"-f", "query=" + query}
+	endCursor := ""
 
-	resp := callCLI(cmd)
-	if resp == nil {
-		log.Fatal("failed to update fields")
-		return
-	}
+	for {
+		cmd := []string{"api", "graphql",
+			"--jq", ".data." + gqlObject + ".projectV2",
+			"-F", "org=" + p.Owner,
+			"-F", "number=" + p.Number,
+			"-F", "first=" + "50",
+			"-F", "endCursor=" + endCursor,
+			"-f", "query=" + query}
 
-	if err := json.Unmarshal(resp, &p); err != nil {
-		log.Fatal(err)
-		return
+		resp := callCLI(cmd)
+		if resp == nil {
+			log.Fatal("failed to update fields")
+			return
+		}
+
+		var page Project
+		if err := json.Unmarshal(resp, &page); err != nil {
+			log.Fatal(err)
+			return
+		}
+
+		// copy data into p
+		p.ID = page.ID
+		p.Title = page.Title
+		p.Fields.Nodes = append(p.Fields.Nodes, page.Fields.Nodes...)
+
+		// break after last page
+		pi := page.Fields.PageInfo
+		if pi.HasNextPage {
+			endCursor = pi.EndCursor
+		} else {
+			break
+		}
 	}
 }
 
