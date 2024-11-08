@@ -79,9 +79,6 @@ func callCLI(cmd []string) []byte {
 		fmt.Print(get_debug_cli_command(cmd), "\n\n")
 		return nil
 	}
-	if DEBUG {
-		fmt.Print(get_debug_cli_command(cmd), "\n\n")
-	}
 	stdout, stderr, err := gh.Exec(cmd...)
 	if err != nil {
 		log.Fatal(strings.Join(cmd, " "), "\n",
@@ -93,6 +90,8 @@ func callCLI(cmd []string) []byte {
 	return stdout.Bytes()
 }
 
+// NB: magic comment to embed a folder
+//
 //go:embed gql/*
 var GqlFiles embed.FS
 
