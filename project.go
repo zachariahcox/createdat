@@ -119,8 +119,10 @@ func (p *Project) UpdateItems() {
 		}
 
 		// copy items into p
-		p.ID = page.ID
-		p.Title = page.Title
+		if p.ID == "" {
+			p.ID = page.ID
+			p.Title = page.Title
+		}
 		p.Items.Nodes = append(p.Items.Nodes, page.Items.Nodes...)
 
 		// break after last page
@@ -161,8 +163,10 @@ func (p *Project) UpdateFields() {
 		}
 
 		// copy data into p
-		p.ID = page.ID
-		p.Title = page.Title
+		if p.ID == "" {
+			p.ID = page.ID
+			p.Title = page.Title
+		}
 		p.Fields.Nodes = append(p.Fields.Nodes, page.Fields.Nodes...)
 
 		// break after last page
@@ -210,6 +214,11 @@ type ProjectItemUpdate struct {
 }
 
 func (p *Project) UpdateCreatedAt() int {
+
+	if p.ID == "" {
+		log.Fatal("project id is not set")
+	}
+
 	fieldIndex, fieldId := p.GetFieldId("Created Date")
 	if fieldId == "" {
 		p.CreateField("Created Date", "DATE")
