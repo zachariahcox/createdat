@@ -1,7 +1,7 @@
-### summary
+### Summary
 Use the GitHub CLI to add a "Created Date" column to a GitHub project.
 
-### developer loop
+### Developer loop
 
 1. Install the gh cli
 1. Login `gh auth refresh` and follow the steps
@@ -13,7 +13,7 @@ make test
 make clean
 ```
 
-### usage
+### Usage
 
 1. find the fully-qualified url to your project.
 2. run the following script with to dry-run the operation:
